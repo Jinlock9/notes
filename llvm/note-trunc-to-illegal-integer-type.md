@@ -131,7 +131,35 @@ This explains the observed asymmetry in masking behavior on Hexagon.
 
 ---
 
-### 7. Dump
+### 7. Appendix
+
+#### Reproducer
+
+```c
+#define TRIM128(a) ((a) & 0xFFFFFF80u)
+
+unsigned repro(float *array, int length,
+               unsigned dim0_unpad, unsigned dim0_pad) {
+    unsigned dst_idx = dim0_unpad;
+
+    for (int d1 = 0; d1 < length / dim0_pad - 1; d1++) {
+        for (int d0 = 0; d0 < dim0_unpad; d0++) {
+            array[dst_idx - TRIM128(dst_idx) + d0] = array[128 + d0];
+        }
+        dst_idx += dim0_unpad;
+    }
+    return dst_idx;
+}
+```
+The expression:
+```
+dst_idx - TRIM128(dst_idx)
+```
+is equivalent to:
+```
+dst_idx & 127
+```
+#### Dumps
 
 ```
 *** IR Dump After Remove sign extends (reargs) ***
